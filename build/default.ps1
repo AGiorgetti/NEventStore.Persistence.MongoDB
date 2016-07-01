@@ -8,6 +8,7 @@ properties {
 	$sln_file = "$src_directory\NEventStore.Persistence.MongoDB.sln"
 	$target_config = "Release"
 	$framework_version = "v4.5"
+	$assemblyInfoFilePath = "$src_directory\VersionAssemblyInfo.cs"
 	$version = "0.0.0.0"
 
 	$xunit_path = "$base_directory\bin\xunit.runners.1.9.1\tools\xunit.console.clr4.exe"
@@ -43,6 +44,7 @@ task UpdateVersion {
 	"" >> $versionAssemblyInfoFile
 	"[assembly: AssemblyVersion(""$assemblyVersion"")]" >> $versionAssemblyInfoFile
 	"[assembly: AssemblyFileVersion(""$assemblyFileVersion"")]" >> $versionAssemblyInfoFile
+	"[assembly: AssemblyInformationalVersion(""$assemblyFileVersion"")]" >> $versionAssemblyInfoFile
 }
 
 task Compile {
@@ -78,3 +80,48 @@ function EnsureDirectory {
 		mkdir $directory
 	}
 }
+
+# GRD TASKS
+
+function Update-AssemblyInformationalVersion
+{
+	param
+    (
+		[string]$version,
+		[string]$assemblyInfoFilePath
+	)
+
+	$newFileVersion = 'AssemblyInformationalVersion("' + $version + '")';
+	$tmpFile = $assemblyInfoFilePath + ".tmp"
+
+	Get-Content $assemblyInfoFilePath |
+		%{$_ -replace 'AssemblyInformationalVersion\("[0-9]+(\.([^.]+|\*)){1,4}"\)', $newFileVersion }  | Out-File -Encoding UTF8 $tmpFile
+
+	Move-Item $tmpFile $assemblyInfoFilePath -force
+}
+
+task GrdUpdateVersion -depends UpdateVersion {
+	#$git_version = (& $base_directory\bin\git\git.exe rev-parse HEAD)
+	
+	$git_version = (& git.exe rev-parse HEAD)
+	
+	$version = Get-Version $assemblyInfoFilePath
+    "Base Version: $version - Git commit: $git_version"
+	$oldVersion = New-Object Version $version
+	#$newVersion = New-Object Version ($oldVersion.Major, $oldVersion.Minor, $oldVersion.Build, $git_version)
+	#$newVersion = $oldVersion.Major.ToString() + "." + $oldVersion.Minor.ToString() + "." + $oldVersion.Build.ToString() + "." + $build_number.ToString() + "." + $git_version
+	$newVersion = "$oldVersion.$git_version"
+    "New Version: $newVersion"
+	Update-AssemblyInformationalVersion $newVersion $assemblyInfoFilePath
+}
+
+task GrdBuild -depends Clean, UpdateVersion, GrdUpdateVersion, Compile, Test
+
+task GrdPackage -depends GrdBuild {
+	move $output_directory $publish_directory
+    mkdir $publish_directory\plugins\persistence\mongo | out-null
+    copy "$src_directory\NEventStore.Persistence.MongoDB\bin\$target_config\NEventStore.Persistence.MongoDB.???" "$publish_directory\plugins\persistence\mongo"
+    copy "$src_directory\NEventStore.Persistence.MongoDB\bin\$target_config\readme.txt" "$publish_directory\plugins\persistence\mongo"
+}
+
+# END GRD TASKS
