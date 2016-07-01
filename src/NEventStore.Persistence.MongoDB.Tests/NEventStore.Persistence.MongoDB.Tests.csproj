@@ -38,6 +38,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MongoDB.Bson, Version=2.2.3.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MongoDB.Bson.2.2.3\lib\net45\MongoDB.Bson.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -60,6 +64,7 @@
       <Link>AcceptanceTests\PersistenceTests.cs</Link>
     </Compile>
     <Compile Include="AcceptanceTestMongoPersistenceFactory.cs" />
+    <Compile Include="AcceptanceTests\CommitHeadersSerializationTests.cs" />
     <Compile Include="AcceptanceTests\OptimisticLoopTests.cs" />
     <Compile Include="AcceptanceTests\PersistenceEngineFixture.cs" />
     <Compile Include="AcceptanceTests\SharedPersistenceTests.cs" />
