@@ -6,12 +6,13 @@ namespace NEventStore.Persistence.MongoDB
 	using System;
 	using global::MongoDB.Driver;
 	using NEventStore.Serialization;
+	using global::MongoDB.Bson.Serialization.Options;
 
 	/// <summary>
 	/// Options for the MongoPersistence engine.
 	/// http://docs.mongodb.org/manual/core/write-concern/#write-concern
 	/// </summary>
-	public  class MongoPersistenceOptions
+	public class MongoPersistenceOptions
 	{
 		/// <summary>
 		/// Get the  <see href="http://docs.mongodb.org/manual/core/write-concern/#write-concern">WriteConcern</see> for the commit insert operation.
@@ -52,7 +53,7 @@ namespace NEventStore.Persistence.MongoDB
 			};
 		}
 
-	    /// <summary>
+		/// <summary>
 		/// Connects to NEvenstore Mongo database
 		/// </summary>
 		/// <param name="connectionString">Connection string</param>
@@ -64,11 +65,22 @@ namespace NEventStore.Persistence.MongoDB
 			return database;
 		}
 
-        /// <summary>
-        /// This is the instance of the Id Generator I want to use to 
-        /// generate checkpoint. 
-        /// </summary>
-	    public ICheckpointGenerator CheckpointGenerator { get; set; }
+		/// <summary>
+		/// Select your serialization scheme for Commit.Headers dictionaty:
+		/// 
+		/// defaults to: DictionaryRepresentation.ArrayOfArrays 
+		/// </summary>
+		public DictionaryRepresentation CommitHeadersDictionaryRepresentation
+		{
+			get { return DictionarySerializerSelector.DictionaryRepresentation; }
+			set { DictionarySerializerSelector.SetDictionaryRepresentation(value); }
+		}
+
+		/// <summary>
+		/// This is the instance of the Id Generator I want to use to 
+		/// generate checkpoint. 
+		/// </summary>
+		public ICheckpointGenerator CheckpointGenerator { get; set; }
 
         public ConcurrencyExceptionStrategy ConcurrencyStrategy { get; set; }
 
@@ -77,8 +89,9 @@ namespace NEventStore.Persistence.MongoDB
         public MongoPersistenceOptions()
 	    {
             SystemBucketName = "system";
-            ConcurrencyStrategy = ConcurrencyExceptionStrategy.Continue; 
-	    }
+            ConcurrencyStrategy = ConcurrencyExceptionStrategy.Continue;
+			CommitHeadersDictionaryRepresentation = DictionaryRepresentation.ArrayOfArrays;
+		}
 	}
 
     public enum ConcurrencyExceptionStrategy
